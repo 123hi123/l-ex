@@ -26436,35 +26436,14 @@
 			}
 		}
 		
-		// 如果不是文本链接，检查是否有图片文件
-		for (let i = 0; i < items.length; i++) {
-			const item = items[i];
-			
-			// 处理图片文件
-			if (item.type.indexOf('image') !== -1) {
-				e.preventDefault();
-				const file = item.getAsFile();
-				if (!file) {
-					console.log('[Emoji Extension] ❌ No file from item');
-					continue;
-				}
-				
-				try {
-					console.log('[Emoji Extension] ✅ Image file detected, uploading...', file.name, file.type);
-					
-					// 上传图片到 Discourse
-					const uploadUrl = await uploadImageToDiscourse(file);
-					if (uploadUrl) {
-						console.log('[Emoji Extension] ✅ Upload successful, inserting:', uploadUrl);
-						insertImageLink(textarea, uploadUrl);
-					} else {
-						console.error('[Emoji Extension] ❌ Upload failed, no URL returned');
-					}
-				} catch (error) {
-					console.error('[Emoji Extension] ❌ Failed to upload image:', error);
-				}
-				return;
-			}
+		// 检查是否有图片文件
+		// ⚠️ 重要：普通页面不拦截图片文件，让 Discourse 自己处理
+		// 只在需要特殊处理的情况下才拦截
+		const hasImageFile = Array.from(items).some(item => item.type.indexOf('image') !== -1);
+		if (hasImageFile) {
+			console.log('[Emoji Extension] ⚠️ Image file detected, but letting Discourse handle it (avoid duplicate upload)');
+			// 不 preventDefault，让 Discourse 的默认行为处理
+			return;
 		}
 		
 		console.log('[Emoji Extension] ⚠️ No image or image URL detected in paste');
