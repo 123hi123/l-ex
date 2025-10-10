@@ -25409,6 +25409,11 @@
 		console.log("[Emoji Extension Userscript] Inserting emoji:", emoji);
 		if (emoji.name && emoji.url) trackEmojiUsage(emoji.name, emoji.url);
 		
+		// 清理表情包名称，去掉文件扩展名
+		let emojiName = emoji.name || 'image';
+		// 去掉常见的图片扩展名
+		emojiName = emojiName.replace(/\.(gif|png|jpg|jpeg|webp|bmp)$/i, '');
+		
 		// 先计算尺寸和格式
 		const dimensionMatch = emoji.url?.match(/_(\d{3,})x(\d{3,})\./);
 		let width = "500";
@@ -25438,9 +25443,9 @@
 			if (outputFormat === "html") {
 				const scaledWidth = Math.max(1, Math.round(Number(width) * (scale / 100)));
 				const scaledHeight = Math.max(1, Math.round(Number(height) * (scale / 100)));
-				insertText = `<img src="${emoji.url}" title=":${emoji.name}:" class="emoji only-emoji" alt=":${emoji.name}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
+				insertText = `<img src="${emoji.url}" title=":${emojiName}:" class="emoji only-emoji" alt=":${emojiName}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
 			} else {
-				insertText = `![${emoji.name}|${width}x${height},${scale}%](${emoji.url}) `;
+				insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
 			}
 			
 			// 使用 native setter 插入（经过测试，这是最可靠的方法）
@@ -25485,8 +25490,8 @@
 			if (outputFormat === "html") {
 				const scaledWidth = Math.max(1, Math.round(Number(width) * (scale / 100)));
 				const scaledHeight = Math.max(1, Math.round(Number(height) * (scale / 100)));
-				insertText = `<img src="${emoji.url}" title=":${emoji.name}:" class="emoji only-emoji" alt=":${emoji.name}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
-			} else insertText = `![${emoji.name}|${width}x${height},${scale}%](${emoji.url}) `;
+				insertText = `<img src="${emoji.url}" title=":${emojiName}:" class="emoji only-emoji" alt=":${emojiName}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
+			} else insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
 			const selectionStart = textarea.selectionStart;
 			const selectionEnd = textarea.selectionEnd;
 			textarea.value = textarea.value.substring(0, selectionStart) + insertText + textarea.value.substring(selectionEnd, textarea.value.length);
