@@ -1,26 +1,49 @@
-# Discourse 表情扩展 (Emoji Extension for Discourse)# Discourse 表情扩展 - 更新包
+# Discourse 表情扩展# Discourse 表情扩展 (Emoji Extension for Discourse)# Discourse 表情扩展 - 更新包
 
 
 
-一个为 Discourse 论坛添加表情选择器功能的用户脚本。## 📦 内容概览
+一个为 Discourse 论坛添加表情选择器功能的用户脚本。
 
 
 
-## 使用方法本次更新为您的 Discourse 表情扩展脚本添加了两个强大的新功能：
+## 使用方法一个为 Discourse 论坛添加表情选择器功能的用户脚本。## 📦 内容概览
 
 
 
-### 步骤 1: 复制脚本代码### 🎯 新增功能
+### 步骤 1: 复制脚本代码
 
 
 
-找到项目中的 `a.js` 文件，打开后复制全部内容。1. **📍 Textarea 点击自动刷新**  
+找到项目中的 `a.js` 文件，打开后将里面的内容全部复制起来。## 使用方法本次更新为您的 Discourse 表情扩展脚本添加了两个强大的新功能：
 
-   点击编辑器时自动刷新三个扩展按钮（🐈‍⬛ ⭐ ⎘）
 
-### 步骤 2: 安装到油猴插件
 
-2. **🖼️ 智能图片粘贴**  
+### 步骤 2: 粘贴到油猴插件
+
+
+
+找到自己的油猴插件（任何类型的油猴插件都可以，例如 Tampermonkey、Violentmonkey、Greasemonkey），然后把代码粘贴上去。### 步骤 1: 复制脚本代码### 🎯 新增功能
+
+
+
+### 步骤 3: 遇到问题？
+
+
+
+如果功能不正常的话，可以换到**暴力猴 (Violentmonkey)** 看看。找到项目中的 `a.js` 文件，打开后复制全部内容。1. **📍 Textarea 点击自动刷新**  
+
+
+
+如果还是不正常，就可以提 Issue 给我：https://github.com/123hi123/l-ex/issues   点击编辑器时自动刷新三个扩展按钮（🐈‍⬛ ⭐ ⎘）
+
+
+
+## 许可证### 步骤 2: 安装到油猴插件
+
+
+
+MIT License2. **🖼️ 智能图片粘贴**  
+
 
 1. 打开你的油猴插件（Tampermonkey、Violentmonkey、Greasemonkey 等任何类型的油猴插件都可以）   粘贴图片自动上传到 Discourse 并插入 Markdown 链接
 
