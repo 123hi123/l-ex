@@ -1,125 +1,59 @@
-# Linux.do 贴图化插件# Discourse 表情扩展# Discourse 表情扩展 (Emoji Extension for Discourse)# Discourse 表情扩展 - 更新包
+# Linux.do 贴图化插件# Discourse 表情扩展 - 更新包
 
 
 
-## 使用方法
+## 使用方法## 📦 内容概览
 
 
 
-### 步骤 1: 复制脚本代码一个为 Discourse 论坛添加表情选择器功能的用户脚本。
+**步骤一**本次更新为您的 Discourse 表情扩展脚本添加了两个强大的新功能：
 
 
 
-找到项目中的 `a.js` 文件，打开后将里面的内容全部复制起来。
+找到项目中的 `a.js` 文件，打开后将里面的内容全部复制起来。### 🎯 新增功能
 
 
 
-### 步骤 2: 粘贴到油猴插件## 使用方法一个为 Discourse 论坛添加表情选择器功能的用户脚本。## 📦 内容概览
+**步骤二**1. **📍 Textarea 点击自动刷新**  
 
-
+   点击编辑器时自动刷新三个扩展按钮（🐈‍⬛ ⭐ ⎘）
 
 找到自己的油猴插件（任何类型的油猴插件都可以，例如 Tampermonkey、Violentmonkey、Greasemonkey），然后把代码粘贴上去。
 
+2. **🖼️ 智能图片粘贴**  
 
-
-### 步骤 3: 遇到问题？### 步骤 1: 复制脚本代码
-
-
-
-如果功能不正常的话，可以换到**暴力猴 (Violentmonkey)** 看看。
+**步骤三**   粘贴图片自动上传到 Discourse 并插入 Markdown 链接
 
 
 
-如果还是不正常，就可以提 Issue 给我：https://github.com/123hi123/l-ex/issues找到项目中的 `a.js` 文件，打开后将里面的内容全部复制起来。## 使用方法本次更新为您的 Discourse 表情扩展脚本添加了两个强大的新功能：
+如果功能不正常的话，可以换到暴力猴 (Violentmonkey) 看看。如果还是不正常，就可以提 Issue 给我：https://github.com/123hi123/l-ex/issues---
 
-
-
-
-### 步骤 2: 粘贴到油猴插件
-
-
-
-找到自己的油猴插件（任何类型的油猴插件都可以，例如 Tampermonkey、Violentmonkey、Greasemonkey），然后把代码粘贴上去。### 步骤 1: 复制脚本代码### 🎯 新增功能
-
-
-
-### 步骤 3: 遇到问题？
-
-
-
-如果功能不正常的话，可以换到**暴力猴 (Violentmonkey)** 看看。找到项目中的 `a.js` 文件，打开后复制全部内容。1. **📍 Textarea 点击自动刷新**  
-
-
-
-如果还是不正常，就可以提 Issue 给我：https://github.com/123hi123/l-ex/issues   点击编辑器时自动刷新三个扩展按钮（🐈‍⬛ ⭐ ⎘）
-
-
-
-## 许可证### 步骤 2: 安装到油猴插件
-
-
-
-MIT License2. **🖼️ 智能图片粘贴**  
-
-
-1. 打开你的油猴插件（Tampermonkey、Violentmonkey、Greasemonkey 等任何类型的油猴插件都可以）   粘贴图片自动上传到 Discourse 并插入 Markdown 链接
-
-2. 点击"添加新脚本"或"创建新脚本"
-
-3. 将复制的代码粘贴进去---
-
-4. 保存脚本
 
 ## 📁 文件说明
 
-### 步骤 3: 遇到问题？
-
+```
+l ex/
+├── a.js                    # ✅ 已修改 - 主脚本文件
+├── 更新说明.md              # 📖 详细的功能说明和技术文档
+├── 快速使用指南.md          # 🚀 简明的使用教程
+├── 代码修改总结.md          # 🔧 代码修改的详细说明
+├── 测试页面.html            # 🧪 功能演示和测试页面
+└── README.md               # 📋 本文件
 ```
 
-- **功能不正常**：尝试切换到 **暴力猴 (Violentmonkey)** 插件l ex/
+---
 
-- **仍然不正常**：请在 [Issues](https://github.com/123hi123/l-ex/issues) 页面提交问题反馈├── a.js                    # ✅ 已修改 - 主脚本文件
+## ⚡ 快速开始
 
-├── 更新说明.md              # 📖 详细的功能说明和技术文档
+### 1. 安装/更新脚本
 
----├── 快速使用指南.md          # 🚀 简明的使用教程
-
-├── 代码修改总结.md          # 🔧 代码修改的详细说明
-
-## 功能特性├── 测试页面.html            # 🧪 功能演示和测试页面
-
-└── README.md               # 📋 本文件
-
-- 🎭 自定义表情包选择器```
-
-- 📋 快速插入常用 Callout 标记
-
-- 🖼️ 图片粘贴自动转换---
-
-- ⚙️ 表情包管理界面
-
-- 💬 聊天页面支持## ⚡ 快速开始
-
-
-
-## 支持的网站### 1. 安装/更新脚本
-
-
-
-- linux.do如果您已经安装了旧版本：
-
-- meta.discourse.org1. 在 Tampermonkey/Greasemonkey 中找到 "Discourse 表情扩展"
-
-- 其他 Discourse 论坛2. 替换为更新后的 `a.js` 文件内容
-
+如果您已经安装了旧版本：
+1. 在 Tampermonkey/Greasemonkey 中找到 "Discourse 表情扩展"
+2. 替换为更新后的 `a.js` 文件内容
 3. 保存并刷新 Discourse 页面
 
-## 许可证
-
 如果是首次安装：
-
-MIT License1. 安装 Tampermonkey 浏览器扩展
-
+1. 安装 Tampermonkey 浏览器扩展
 2. 创建新脚本
 3. 复制 `a.js` 的全部内容
 4. 保存并访问 Discourse 论坛
