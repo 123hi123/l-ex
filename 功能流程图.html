@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discourse 表情扩展 - 功能流程图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 1200px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .feature-box {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            background: #fafafa;
+        }
+        .feature-title {
+            font-size: 1.5em;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .flow-chart {
+            margin: 20px 0;
+        }
+        .flow-step {
+            background: white;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .flow-step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        .flow-step::after {
+            content: '↓';
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #4CAF50;
+        }
+        .flow-step:last-child::after {
+            content: '✓';
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .step-number {
+            background: #4CAF50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .code-sample {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .highlight {
+            color: #66d9ef;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Discourse 表情扩展 - 功能流程图</h1>
+        
+        <div class="features">
+            <!-- Feature 1: Click Refresh -->
+            <div class="feature-box">
+                <div class="feature-title">
+                    <span>📍</span>
+                    <span>功能 1：点击自动刷新</span>
+                </div>
+                
+                <div class="flow-chart">
+                    <div class="flow-step">
+                        <span class="step-number">1</span>
+                        <strong>用户点击 Textarea</strong>
+                        <div class="code-sample">
+&lt;textarea class="chat-composer__input"&gt;
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">2</span>
+                        <strong>检测点击事件</strong>
+                        <div class="code-sample">
+textarea.addEventListener(<span class="highlight">'click'</span>, () => {
+  console.log('点击检测到！');
+});
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">3</span>
+                        <strong>查找工具栏</strong>
+                        <div class="code-sample">
+const toolbars = <span class="highlight">findAllToolbars</span>();
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">4</span>
+                        <strong>移除旧按钮</strong>
+                        <div class="code-sample">
+oldButtons.forEach(btn => btn.<span class="highlight">remove</span>());
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">5</span>
+                        <strong>注入新按钮</strong>
+                        <div class="code-sample">
+<span class="highlight">injectEmojiButton</span>(toolbar);
+// 🐈‍⬛ ⭐ ⎘
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">✓</span>
+                        <strong>按钮刷新完成</strong>
+                        <div class="info">
+                            <strong>结果：</strong>三个扩展按钮重新出现并可用
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 2: Image Paste -->
+            <div class="feature-box">
+                <div class="feature-title">
+                    <span>🖼️</span>
+                    <span>功能 2：智能图片粘贴</span>
+                </div>
+                
+                <div class="flow-chart">
+                    <div class="flow-step">
+                        <span class="step-number">1</span>
+                        <strong>用户粘贴图片</strong>
+                        <div class="code-sample">
+Ctrl + V (Windows) 或 Cmd + V (Mac)
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">2</span>
+                        <strong>检测剪贴板内容</strong>
+                        <div class="code-sample">
+const items = e.clipboardData<span class="highlight">?.items</span>;
+if (item.type.indexOf(<span class="highlight">'image'</span>) !== -1) {
+  // 检测到图片
+}
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">3</span>
+                        <strong>获取图片文件</strong>
+                        <div class="code-sample">
+const file = item.<span class="highlight">getAsFile</span>();
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">4</span>
+                        <strong>上传到服务器</strong>
+                        <div class="code-sample">
+POST <span class="highlight">/uploads.json</span>
+FormData: { file, type, synchronous }
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">5</span>
+                        <strong>获取上传 URL</strong>
+                        <div class="code-sample">
+const url = data.<span class="highlight">url</span> || data.<span class="highlight">short_url</span>;
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">6</span>
+                        <strong>插入 Markdown</strong>
+                        <div class="code-sample">
+<span class="highlight">![image](</span>https://linux.do/uploads/xxx.jpg<span class="highlight">)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-step">
+                        <span class="step-number">✓</span>
+                        <strong>图片插入完成</strong>
+                        <div class="info">
+                            <strong>结果：</strong>图片链接自动出现在编辑器中
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+            <h2 style="margin-top: 0; text-align: center;">⚡ 核心技术特性</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-top: 0;">🛡️ 安全性</h3>
+                    <ul style="line-height: 1.8;">
+                        <li>CSRF Token 自动获取</li>
+                        <li>使用官方 API</li>
+                        <li>完整错误处理</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-top: 0;">🚀 性能</h3>
+                    <ul style="line-height: 1.8;">
+                        <li>防止重复绑定</li>
+                        <li>异步处理</li>
+                        <li>智能检测</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-top: 0;">🔧 兼容性</h3>
+                    <ul style="line-height: 1.8;">
+                        <li>所有主流浏览器</li>
+                        <li>所有 Discourse 编辑器</li>
+                        <li>向后兼容</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; padding: 20px; background: #f0f0f0; border-radius: 10px;">
+            <h3 style="color: #333;">🎊 开始使用</h3>
+            <p style="font-size: 1.2em; color: #666;">
+                现在就去 Discourse 论坛试试这些新功能吧！
+            </p>
+            <div style="margin-top: 20px;">
+                <span style="background: #4CAF50; color: white; padding: 10px 30px; border-radius: 25px; font-weight: bold; display: inline-block;">
+                    版本 1.1.7 - 稳定可用 ✅
+                </span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
