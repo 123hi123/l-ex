@@ -22695,7 +22695,10 @@
 	}
 	function addEmojiToUserscript(emojiData) {
 		try {
+			console.log("[addEmojiToUserscript] ========== 開始 ==========");
+			console.log("[addEmojiToUserscript] 接收到的數據:", emojiData);
 			const data = loadDataFromLocalStorage();
+			console.log("[addEmojiToUserscript] 載入數據, emojiGroups 數量:", data.emojiGroups.length);
 			let userGroup = data.emojiGroups.find((g) => g.id === "user_added");
 			if (!userGroup) {
 				userGroup = {
@@ -22706,16 +22709,31 @@
 					emojis: []
 				};
 				data.emojiGroups.push(userGroup);
+				console.log("[addEmojiToUserscript] 創建了新的 user_added 分組");
 			}
-			if (!userGroup.emojis.some((e) => e.url === emojiData.url || e.name === emojiData.name)) {
-				userGroup.emojis.push({
-					packet: Date.now(),
-					name: emojiData.name,
-					url: emojiData.url
-				});
-				saveDataToLocalStorage({ emojiGroups: data.emojiGroups });
-				console.log("[Userscript] Added emoji to user group:", emojiData.name);
-			} else console.log("[Userscript] Emoji already exists:", emojiData.name);
+			console.log("[addEmojiToUserscript] 檢查前 emojis 長度:", userGroup.emojis ? userGroup.emojis.length : "null/undefined");
+			// 確保 emojis 是數組
+			if (!userGroup.emojis || !Array.isArray(userGroup.emojis)) {
+				userGroup.emojis = [];
+			}
+			console.log("[addEmojiToUserscript] 當前 emojis 長度:", userGroup.emojis.length);
+			console.log("[addEmojiToUserscript] 檢查是否重複...");
+			const existingIndex = userGroup.emojis.findIndex((e) => e.url === emojiData.url || e.name === emojiData.name);
+			if (existingIndex !== -1) {
+				// 圖片已存在,移除舊的並更新排序
+				console.log("[addEmojiToUserscript] 🔄 圖片已存在,移除舊的並更新排序");
+				userGroup.emojis.splice(existingIndex, 1);
+			}
+			// 添加到末尾 (最新)
+			userGroup.emojis.push({
+				packet: Date.now(),
+				name: emojiData.name,
+				url: emojiData.url
+			});
+			console.log("[addEmojiToUserscript] ✅ 已添加到數組, 新長度:", userGroup.emojis.length);
+			saveDataToLocalStorage({ emojiGroups: data.emojiGroups });
+			console.log("[addEmojiToUserscript] ✅ 已保存到 localStorage");
+			console.log("[Userscript] Added emoji to user group:", emojiData.name);
 		} catch (error) {
 			console.error("[Userscript] Failed to add emoji:", error);
 		}
@@ -23060,14 +23078,19 @@
 				button.style.background = "linear-gradient(135deg, #6b7280, #4b5563)";
 				button.disabled = true;
 				const lightboxWrappers = cookedElement.querySelectorAll(".lightbox-wrapper");
+				console.log("[批量添加] 找到", lightboxWrappers.length, "個 lightbox-wrapper");
 				const allEmojiData = [];
 				lightboxWrappers.forEach((wrapper) => {
 					const items = extractEmojiDataFromLightboxWrapper(wrapper);
 					allEmojiData.push(...items);
 				});
+				console.log("[批量添加] 解析到", allEmojiData.length, "個圖片");
+				console.log("[批量添加] 圖片列表:", allEmojiData);
 				if (allEmojiData.length === 0) throw new Error("未找到可解析的图片");
 				let successCount = 0;
+				console.log("[批量添加] 開始添加圖片...");
 				for (const emojiData of allEmojiData) try {
+					console.log("[批量添加] 正在添加:", emojiData);
 					addEmojiToUserscript(emojiData);
 					successCount++;
 				} catch (e$1) {
@@ -24623,7 +24646,10 @@
 					className: "btn btn-sm"
 				});
 				del.addEventListener("click", () => {
-					group.emojis.splice(idx, 1);
+					if (group.emojis && Array.isArray(group.emojis)) {
+						group.emojis.splice(idx, 1);
+						saveDataToLocalStorage({ emojiGroups: userscriptState.emojiGroups });
+					}
 					renderGroups();
 					renderSelectedGroup();
 				});
@@ -24742,6 +24768,7 @@
 			try {
 				if (syncFromManager()) {
 					const data = loadDataFromLocalStorage();
+			console.log("[addEmojiToUserscript] 載入數據, emojiGroups 數量:", data.emojiGroups.length);
 					userscriptState.emojiGroups = data.emojiGroups || [];
 					userscriptState.settings = data.settings || userscriptState.settings;
 					alert("同步成功，已导入管理器数据");
@@ -25650,7 +25677,7 @@
 			});
 			titleContainer.appendChild(title);
 			const sectionEmojis = createEl("div", { className: "emoji-picker__section-emojis" });
-			group.emojis.forEach((emoji) => {
+			(group.id === "user_added" ? [...group.emojis].reverse() : group.emojis).forEach((emoji) => {
 				if (!emoji || typeof emoji !== "object" || !emoji.url || !emoji.name) return;
 				const img = createEl("img", {
 					src: emoji.url,
@@ -25864,7 +25891,7 @@
 			titleContainer.appendChild(title);
 			const sectionEmojis = createEl("div", { className: "emoji-picker__section-emojis" });
 			let added = 0;
-			group.emojis.forEach((emoji) => {
+			(group.id === "user_added" ? [...group.emojis].reverse() : group.emojis).forEach((emoji) => {
 				if (!emoji || typeof emoji !== "object" || !emoji.url || !emoji.name) return;
 				const img = createEl("img", {
 					width: "32px",
