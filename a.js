@@ -23022,6 +23022,129 @@
 			title.appendChild(addButton);
 		}
 	}
+	function extractEmojiDataFromPhotoSwipe(pswpContainer) {
+		// 找到當前顯示的圖片 (aria-hidden="false")
+		const currentItem = pswpContainer.querySelector('.pswp__item[aria-hidden="false"]');
+		if (!currentItem) return null;
+
+		const img = currentItem.querySelector("img.pswp__img");
+		if (!img) return null;
+
+		const url = img.getAttribute("src") || "";
+		const alt = img.getAttribute("alt") || "";
+		if (!url || !url.startsWith("http")) return null;
+
+		let name = alt.trim();
+		if (!name || name.length < 2) name = extractNameFromUrl(url);
+
+		console.log("[PhotoSwipe 單圖] 找到當前圖片:", { name, url });
+		return {
+			name,
+			url
+		};
+	}
+	function createPhotoSwipeAddButton(emojiData) {
+		const button = createEl("button", {
+			className: "emoji-add-photoswipe-button",
+			style: `
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				z-index: 2000;
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				background: linear-gradient(135deg, #4f46e5, #7c3aed);
+				color: #fff;
+				border-radius: 8px;
+				padding: 10px 16px;
+				font-weight: 600;
+				cursor: pointer;
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+				transition: all 0.2s ease;
+				font-size: 14px;
+			`
+		});
+		button.innerHTML = `
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em; fill: currentColor;">
+				<path d="M12 4c.55 0 1 .45 1 1v6h6c.55 0 1 .45 1 1s-.45 1-1 1h-6v6c0 .55-.45 1-1 1s-1-.45-1-1v-6H5c-.55 0-1-.45-1-1s.45-1 1-1h6V5c0-.55.45-1 1-1z"/>
+			</svg>
+			添加表情
+		`;
+		button.addEventListener("mouseenter", () => {
+			if (!button.disabled && !button.innerHTML.includes("已添加")) {
+				button.style.background = "linear-gradient(135deg, #3730a3, #5b21b6)";
+				button.style.transform = "scale(1.05)";
+				button.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.4)";
+			}
+		});
+		button.addEventListener("mouseleave", () => {
+			if (!button.disabled && !button.innerHTML.includes("已添加")) {
+				button.style.background = "linear-gradient(135deg, #4f46e5, #7c3aed)";
+				button.style.transform = "scale(1)";
+				button.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.3)";
+			}
+		});
+		button.addEventListener("click", async (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const originalHTML = button.innerHTML;
+			const originalStyle = button.style.cssText;
+			try {
+				console.log("[PhotoSwipe 單圖] 正在添加:", emojiData);
+				addEmojiToUserscript(emojiData);
+				button.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em; fill: currentColor;">
+						<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+					</svg>
+					已添加
+				`;
+				button.style.background = "linear-gradient(135deg, #10b981, #059669)";
+				button.disabled = true;
+				setTimeout(() => {
+					button.innerHTML = originalHTML;
+					button.style.cssText = originalStyle;
+					button.disabled = false;
+				}, 2e3);
+			} catch (error) {
+				console.error("[PhotoSwipe 單圖] 添加失敗:", error);
+				button.innerHTML = `
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 1.2em; height: 1.2em; fill: currentColor;">
+						<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+					</svg>
+					失敗
+				`;
+				button.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
+				setTimeout(() => {
+					button.innerHTML = originalHTML;
+					button.style.cssText = originalStyle;
+					button.disabled = false;
+				}, 2e3);
+			}
+		});
+		return button;
+	}
+	function processPhotoSwipe(pswpContainer) {
+		// 移除舊按鈕(如果存在)
+		const oldButton = pswpContainer.querySelector(".emoji-add-photoswipe-button");
+		if (oldButton) {
+			oldButton.remove();
+		}
+
+		// 傳入容器而不是圖片元素
+		const emojiData = extractEmojiDataFromPhotoSwipe(pswpContainer);
+		if (!emojiData) return;
+		const addButton = createPhotoSwipeAddButton(emojiData);
+		pswpContainer.appendChild(addButton);
+	}
+	function processAllPhotoSwipes() {
+		document.querySelectorAll(".pswp").forEach((pswp) => {
+			if (pswp.querySelector("img.pswp__img")) {
+				processPhotoSwipe(pswp);
+			}
+		});
+	}
 	function processAllLightboxes() {
 		document.querySelectorAll(".mfp-wrap.mfp-gallery").forEach((lightbox) => {
 			if (lightbox.classList.contains("mfp-wrap") && lightbox.classList.contains("mfp-gallery") && lightbox.querySelector(".mfp-img")) processLightbox(lightbox);
@@ -23030,23 +23153,39 @@
 	function initOneClickAdd() {
 		console.log("[Emoji Extension Userscript] Initializing one-click add functionality");
 		setTimeout(processAllLightboxes, 500);
+		setTimeout(processAllPhotoSwipes, 500);
 		new MutationObserver((mutations) => {
 			let hasNewLightbox = false;
+			let hasNewPhotoSwipe = false;
 			mutations.forEach((mutation) => {
 				if (mutation.type === "childList") mutation.addedNodes.forEach((node) => {
 					if (node.nodeType === Node.ELEMENT_NODE) {
 						const element = node;
 						if (element.classList && element.classList.contains("mfp-wrap")) hasNewLightbox = true;
+						if (element.classList && element.classList.contains("pswp")) hasNewPhotoSwipe = true;
 					}
 				});
+				// 監聽 .pswp__item 的 aria-hidden 屬性變化(圖片切換)
+				if (mutation.type === "attributes" &&
+					mutation.target.classList &&
+					mutation.target.classList.contains("pswp__item") &&
+					mutation.attributeName === "aria-hidden") {
+					hasNewPhotoSwipe = true;
+				}
 			});
 			if (hasNewLightbox) setTimeout(processAllLightboxes, 100);
+			if (hasNewPhotoSwipe) setTimeout(processAllPhotoSwipes, 100);
 		}).observe(document.body, {
 			childList: true,
-			subtree: true
+			subtree: true,
+			attributes: true,
+			attributeFilter: ["aria-hidden"]
 		});
 		document.addEventListener("visibilitychange", () => {
-			if (!document.hidden) setTimeout(processAllLightboxes, 200);
+			if (!document.hidden) {
+				setTimeout(processAllLightboxes, 200);
+				setTimeout(processAllPhotoSwipes, 200);
+			}
 		});
 		initBatchParseButtons();
 	}
@@ -23107,12 +23246,25 @@
 					allEmojiData.push(...items);
 				});
 
-				// 解析 GIF (pausable-animated-image)
+				// 解析 GIF (pausable-animated-image 容器)
 				const animatedImages = cookedElement.querySelectorAll(".pausable-animated-image");
 				console.log("[批量添加] 找到", animatedImages.length, "個 pausable-animated-image (GIF)");
 				animatedImages.forEach((animatedDiv) => {
 					const items = extractEmojiDataFromAnimatedImage(animatedDiv);
 					allEmojiData.push(...items);
+				});
+
+				// 解析 GIF (直接的 img.animated 標籤)
+				const directAnimatedImages = cookedElement.querySelectorAll("img.animated");
+				console.log("[批量添加] 找到", directAnimatedImages.length, "個 img.animated (直接 GIF)");
+				directAnimatedImages.forEach((img) => {
+					const url = img.getAttribute("src") || "";
+					const alt = img.getAttribute("alt") || "";
+					if (!url || !url.startsWith("http") || !url.toLowerCase().endsWith(".gif")) return;
+					let name = alt.replace(/\.gif$/i, "").trim();
+					if (!name || name.length < 2) name = extractNameFromUrl(url);
+					console.log("[批量添加] 找到直接 GIF:", { name, url });
+					allEmojiData.push({ name, url });
 				});
 
 				console.log("[批量添加] 解析到", allEmojiData.length, "個圖片/GIF");
@@ -23172,7 +23324,8 @@
 		// 檢查是否有圖片或 GIF
 		const hasImages = cookedElement.querySelector(".lightbox-wrapper");
 		const hasGifs = cookedElement.querySelector(".pausable-animated-image");
-		if (!hasImages && !hasGifs) return;
+		const hasDirectGifs = cookedElement.querySelector("img.animated");
+		if (!hasImages && !hasGifs && !hasDirectGifs) return;
 		const batchButton = createBatchParseButton(cookedElement);
 		cookedElement.insertBefore(batchButton, cookedElement.firstChild);
 	}
@@ -23181,7 +23334,8 @@
 			// 檢查是否有圖片或 GIF
 			const hasImages = element.querySelector(".lightbox-wrapper");
 			const hasGifs = element.querySelector(".pausable-animated-image");
-			if (element.classList.contains("cooked") && (hasImages || hasGifs)) {
+			const hasDirectGifs = element.querySelector("img.animated");
+			if (element.classList.contains("cooked") && (hasImages || hasGifs || hasDirectGifs)) {
 				processCookedContent(element);
 			}
 		});
