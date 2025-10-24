@@ -22718,19 +22718,22 @@
 			}
 			console.log("[addEmojiToUserscript] 當前 emojis 長度:", userGroup.emojis.length);
 			console.log("[addEmojiToUserscript] 檢查是否重複...");
-			const existingIndex = userGroup.emojis.findIndex((e) => e.url === emojiData.url || e.name === emojiData.name);
+			// 只用 URL 來判斷是否重複 (URL 是唯一的)
+			const existingIndex = userGroup.emojis.findIndex((e) => e.url === emojiData.url);
 			if (existingIndex !== -1) {
 				// 圖片已存在,移除舊的並更新排序
-				console.log("[addEmojiToUserscript] 🔄 圖片已存在,移除舊的並更新排序");
+				console.log("[addEmojiToUserscript] 🔄 圖片已存在 (URL 相同),移除舊的並更新排序");
 				userGroup.emojis.splice(existingIndex, 1);
 			}
 			// 添加到末尾 (最新)
+			// 使用當前時間戳 + 隨機數,確保批量添加時每個圖片的 packet 都不同
+			const uniquePacket = Date.now() + Math.random();
 			userGroup.emojis.push({
-				packet: Date.now(),
+				packet: uniquePacket,
 				name: emojiData.name,
 				url: emojiData.url
 			});
-			console.log("[addEmojiToUserscript] ✅ 已添加到數組, 新長度:", userGroup.emojis.length);
+			console.log("[addEmojiToUserscript] ✅ 已添加到數組, packet:", uniquePacket, ", 新長度:", userGroup.emojis.length);
 			saveDataToLocalStorage({ emojiGroups: data.emojiGroups });
 			console.log("[addEmojiToUserscript] ✅ 已保存到 localStorage");
 			console.log("[Userscript] Added emoji to user group:", emojiData.name);
@@ -22833,7 +22836,8 @@
 				enableFloatingPreview: true,
 				enableCalloutSuggestions: true
 			},
-			emojiUsageStats: {}
+			emojiUsageStats: {},
+			fullSizeMode: false  // 新增: 全尺寸模式標誌
 		};
 	}));
 	function createEl(tag, opts) {
@@ -23089,6 +23093,11 @@
 				if (allEmojiData.length === 0) throw new Error("未找到可解析的图片");
 				let successCount = 0;
 				console.log("[批量添加] 開始添加圖片...");
+
+				// 設置批量添加模式,暫時禁用事件觸發
+				userscriptState.batchAddMode = true;
+				console.log("[批量添加] 🚫 已啟用批量模式,暫時禁用事件觸發");
+
 				for (const emojiData of allEmojiData) try {
 					console.log("[批量添加] 正在添加:", emojiData);
 					addEmojiToUserscript(emojiData);
@@ -23096,6 +23105,11 @@
 				} catch (e$1) {
 					console.error("[Userscript OneClick] 添加图片失败", emojiData.name, e$1);
 				}
+
+				// 批量添加完成,關閉批量模式
+				userscriptState.batchAddMode = false;
+				console.log("[批量添加] ✅ 批量模式結束,共添加", successCount, "張圖片");
+
 				button.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 1em; height: 1em; fill: currentColor;">
           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
@@ -25435,12 +25449,12 @@
 	function insertEmojiIntoEditor(emoji) {
 		console.log("[Emoji Extension Userscript] Inserting emoji:", emoji);
 		if (emoji.name && emoji.url) trackEmojiUsage(emoji.name, emoji.url);
-		
+
 		// 清理表情包名称，去掉文件扩展名
 		let emojiName = emoji.name || 'image';
 		// 去掉常见的图片扩展名
 		emojiName = emojiName.replace(/\.(gif|png|jpg|jpeg|webp|bmp)$/i, '');
-		
+
 		// 先计算尺寸和格式
 		const dimensionMatch = emoji.url?.match(/_(\d{3,})x(\d{3,})\./);
 		let width = "500";
@@ -25452,9 +25466,13 @@
 			width = emoji.width.toString();
 			height = emoji.height.toString();
 		}
-		const scale = userscriptState.settings?.imageScale || 30;
+
+		// 檢查是否為全尺寸模式
+		const scale = userscriptState.fullSizeMode ? 100 : (userscriptState.settings?.imageScale || 30);
 		const outputFormat = userscriptState.settings?.outputFormat || "markdown";
-		
+
+		console.log(`[insertEmojiIntoEditor] 全尺寸模式: ${userscriptState.fullSizeMode}, scale: ${scale}`);
+
 		// 检测是否在聊天页面
 		const isChatPage = window.location.pathname.includes('/chat/c');
 		
@@ -25472,7 +25490,12 @@
 				const scaledHeight = Math.max(1, Math.round(Number(height) * (scale / 100)));
 				insertText = `<img src="${emoji.url}" title=":${emojiName}:" class="emoji only-emoji" alt=":${emojiName}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
 			} else {
-				insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
+				// 全尺寸模式: 不指定尺寸參數
+				if (userscriptState.fullSizeMode) {
+					insertText = `![${emojiName}](${emoji.url}) `;
+				} else {
+					insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
+				}
 			}
 			
 			// 使用 native setter 插入（经过测试，这是最可靠的方法）
@@ -25518,7 +25541,14 @@
 				const scaledWidth = Math.max(1, Math.round(Number(width) * (scale / 100)));
 				const scaledHeight = Math.max(1, Math.round(Number(height) * (scale / 100)));
 				insertText = `<img src="${emoji.url}" title=":${emojiName}:" class="emoji only-emoji" alt=":${emojiName}:" loading="lazy" width="${scaledWidth}" height="${scaledHeight}" style="aspect-ratio: ${scaledWidth} / ${scaledHeight};"> `;
-			} else insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
+			} else {
+				// 全尺寸模式: 不指定尺寸參數
+				if (userscriptState.fullSizeMode) {
+					insertText = `![${emojiName}](${emoji.url}) `;
+				} else {
+					insertText = `![${emojiName}|${width}x${height},${scale}%](${emoji.url}) `;
+				}
+			}
 			const selectionStart = textarea.selectionStart;
 			const selectionEnd = textarea.selectionEnd;
 			textarea.value = textarea.value.substring(0, selectionStart) + insertText + textarea.value.substring(selectionEnd, textarea.value.length);
@@ -25626,6 +25656,30 @@
 			}
 		});
 		sectionsNav.appendChild(settingsButton);
+
+		// 新增: 全尺寸模式切換按鈕 (Mobile)
+		const fullSizeButtonMobile = createEl("button", {
+			className: "btn no-text btn-flat emoji-picker__section-btn fullsize-btn",
+			innerHTML: "🖼️",
+			title: "全尺寸模式 (100%)",
+			attrs: {
+				tabindex: "-1",
+				style: "border-right: 1px solid #ddd;",
+				type: "button"
+			}
+		});
+		fullSizeButtonMobile.addEventListener("click", () => {
+			userscriptState.fullSizeMode = !userscriptState.fullSizeMode;
+			if (userscriptState.fullSizeMode) {
+				fullSizeButtonMobile.style.background = "#e3f2fd";
+				fullSizeButtonMobile.title = "全尺寸模式 (已啟用)";
+			} else {
+				fullSizeButtonMobile.style.background = "";
+				fullSizeButtonMobile.title = "全尺寸模式 (100%)";
+			}
+			console.log("[Mobile Picker] 全尺寸模式:", userscriptState.fullSizeMode);
+		});
+		sectionsNav.appendChild(fullSizeButtonMobile);
 		const scrollableContent = createEl("div", { className: "emoji-picker__scrollable-content" });
 		const sections = createEl("div", {
 			className: "emoji-picker__sections",
@@ -25774,6 +25828,7 @@
 		modalBody.appendChild(emojiPickerDiv);
 		modalContainerDiv.appendChild(modalBody);
 		modal.appendChild(modalContainerDiv);
+
 		return modal;
 	}
 	function createDesktopEmojiPicker(groups) {
@@ -25815,6 +25870,30 @@
 			}, void 0).then(({ openManagementInterface: openManagementInterface$1 }) => {
 				openManagementInterface$1();
 			});
+
+		// 新增: 全尺寸模式切換按鈕 (Desktop)
+		const fullSizeButton = createEl("button", {
+			className: "btn no-text btn-flat emoji-picker__section-btn fullsize-btn",
+			attrs: {
+				tabindex: "-1",
+				style: "border-right: 1px solid #ddd;"
+			},
+			type: "button",
+			innerHTML: "🖼️",
+			title: "全尺寸模式 (100%)"
+		});
+		fullSizeButton.addEventListener("click", () => {
+			userscriptState.fullSizeMode = !userscriptState.fullSizeMode;
+			if (userscriptState.fullSizeMode) {
+				fullSizeButton.style.background = "#e3f2fd";
+				fullSizeButton.title = "全尺寸模式 (已啟用)";
+			} else {
+				fullSizeButton.style.background = "";
+				fullSizeButton.title = "全尺寸模式 (100%)";
+			}
+			console.log("[Desktop Picker] 全尺寸模式:", userscriptState.fullSizeMode);
+		});
+		sectionsNav.appendChild(fullSizeButton);
 		});
 		sectionsNav.appendChild(managementButton);
 		const settingsButton = createEl("button", {
@@ -25997,6 +26076,8 @@
 		emojiPickerDiv.appendChild(content);
 		innerContent.appendChild(emojiPickerDiv);
 		picker.appendChild(innerContent);
+
+
 		return picker;
 	}
 	async function createEmojiPicker() {
@@ -26316,6 +26397,83 @@
 			closeCurrentPicker();
 			showPopularEmojisModal();
 		});
+
+		// 新增: 全尺寸模式切換按鈕 (工具欄)
+		const fullSizeModeButton = createEl("button", {
+			className: "btn no-text btn-icon toolbar__button fullsize-mode-button emoji-extension-button",
+			title: "全尺寸模式 (100%)",
+			type: "button",
+			innerHTML: "🖼️"
+		});
+		if (isChatComposer) {
+			fullSizeModeButton.classList.add("fk-d-menu__trigger", "chat-composer-button", "btn-transparent");
+			fullSizeModeButton.setAttribute("aria-expanded", "false");
+			fullSizeModeButton.setAttribute("data-trigger", "");
+		}
+		// 初始化按鈕狀態
+		if (userscriptState.fullSizeMode) {
+			fullSizeModeButton.style.background = "#e3f2fd";
+			fullSizeModeButton.title = "全尺寸模式 (已啟用)";
+		}
+		fullSizeModeButton.addEventListener("click", async (e) => {
+			e.stopPropagation();
+			// 先切換全尺寸模式
+			userscriptState.fullSizeMode = true;
+			fullSizeModeButton.style.background = "#e3f2fd";
+			fullSizeModeButton.title = "全尺寸模式 (已啟用)";
+			console.log('[Toolbar] 全尺寸模式已啟用,打開表情選擇器');
+
+			// 關閉當前選擇器 (如果有)
+			if (currentPicker) {
+				closeCurrentPicker();
+			}
+
+			// 打開表情選擇器
+			currentPicker = await createEmojiPicker();
+			if (!currentPicker) return;
+			document.body.appendChild(currentPicker);
+			const buttonRect = fullSizeModeButton.getBoundingClientRect();
+			if (currentPicker.classList.contains("modal") || currentPicker.className.includes("d-modal")) {
+				currentPicker.style.position = "fixed";
+				currentPicker.style.top = "0";
+				currentPicker.style.left = "0";
+				currentPicker.style.right = "0";
+				currentPicker.style.bottom = "0";
+				currentPicker.style.zIndex = "999999";
+			} else {
+				currentPicker.style.position = "fixed";
+				const margin = 8;
+				const vpWidth = window.innerWidth;
+				const vpHeight = window.innerHeight;
+				currentPicker.style.top = buttonRect.bottom + margin + "px";
+				currentPicker.style.left = buttonRect.left + "px";
+				const pickerRect = currentPicker.getBoundingClientRect();
+				const spaceBelow = vpHeight - buttonRect.bottom;
+				const neededHeight = pickerRect.height + margin;
+				let top = buttonRect.bottom + margin;
+				if (spaceBelow < neededHeight) top = Math.max(margin, buttonRect.top - pickerRect.height - margin);
+				let left = buttonRect.left;
+				if (left + pickerRect.width + margin > vpWidth) left = Math.max(margin, vpWidth - pickerRect.width - margin);
+				if (left < margin) left = margin;
+				currentPicker.style.top = top + "px";
+				currentPicker.style.left = left + "px";
+			}
+			setTimeout(() => {
+				const handleClick = (e$1) => {
+					if (currentPicker && !currentPicker.contains(e$1.target) && e$1.target !== fullSizeModeButton) {
+						closeCurrentPicker();
+						// 關閉選擇器時,重置全尺寸模式
+						userscriptState.fullSizeMode = false;
+						fullSizeModeButton.style.background = "";
+						fullSizeModeButton.title = "全尺寸模式 (100%)";
+						console.log('[Toolbar] 選擇器關閉,全尺寸模式已重置');
+						document.removeEventListener("click", handleClick);
+					}
+				};
+				document.addEventListener("click", handleClick);
+			}, 100);
+		});
+
 		const quickInsertButton = createEl("button", {
 			className: "btn no-text btn-icon toolbar__button quick-insert-button",
 			title: "快捷输入",
@@ -26349,15 +26507,18 @@
 				const existingEmojiTrigger = toolbar.querySelector(".emoji-picker-trigger:not(.emoji-extension-button)");
 				if (existingEmojiTrigger) {
 					toolbar.insertBefore(button, existingEmojiTrigger);
+					toolbar.insertBefore(fullSizeModeButton, existingEmojiTrigger);
 					toolbar.insertBefore(quickInsertButton, existingEmojiTrigger);
 					toolbar.insertBefore(popularButton, existingEmojiTrigger);
 				} else {
 					toolbar.appendChild(button);
+					toolbar.appendChild(fullSizeModeButton);
 					toolbar.appendChild(quickInsertButton);
 					toolbar.appendChild(popularButton);
 				}
 			} else {
 				toolbar.appendChild(button);
+				toolbar.appendChild(fullSizeModeButton);
 				toolbar.appendChild(quickInsertButton);
 				toolbar.appendChild(popularButton);
 			}
