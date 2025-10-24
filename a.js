@@ -22908,6 +22908,22 @@
 			return "表情";
 		}
 	}
+	function extractEmojiDataFromAnimatedImage(animatedImageDiv) {
+		const results = [];
+		const img = animatedImageDiv.querySelector("img.animated");
+		if (!img) return results;
+		const url = img.getAttribute("src") || "";
+		const alt = img.getAttribute("alt") || "";
+		if (!url || !url.startsWith("http") || !url.toLowerCase().endsWith(".gif")) return results;
+		let name = alt.replace(/\.gif$/i, "").trim();
+		if (!name || name.length < 2) name = extractNameFromUrl(url);
+		console.log("[GIF 解析] 找到 GIF:", { name, url });
+		results.push({
+			name,
+			url
+		});
+		return results;
+	}
 	function createAddButton(emojiData) {
 		const link = createEl("a", {
 			className: "image-source-link emoji-add-link",
@@ -23081,6 +23097,8 @@
 				button.innerHTML = "正在解析...";
 				button.style.background = "linear-gradient(135deg, #6b7280, #4b5563)";
 				button.disabled = true;
+
+				// 解析圖片 (lightbox-wrapper)
 				const lightboxWrappers = cookedElement.querySelectorAll(".lightbox-wrapper");
 				console.log("[批量添加] 找到", lightboxWrappers.length, "個 lightbox-wrapper");
 				const allEmojiData = [];
@@ -23088,11 +23106,20 @@
 					const items = extractEmojiDataFromLightboxWrapper(wrapper);
 					allEmojiData.push(...items);
 				});
-				console.log("[批量添加] 解析到", allEmojiData.length, "個圖片");
-				console.log("[批量添加] 圖片列表:", allEmojiData);
+
+				// 解析 GIF (pausable-animated-image)
+				const animatedImages = cookedElement.querySelectorAll(".pausable-animated-image");
+				console.log("[批量添加] 找到", animatedImages.length, "個 pausable-animated-image (GIF)");
+				animatedImages.forEach((animatedDiv) => {
+					const items = extractEmojiDataFromAnimatedImage(animatedDiv);
+					allEmojiData.push(...items);
+				});
+
+				console.log("[批量添加] 解析到", allEmojiData.length, "個圖片/GIF");
+				console.log("[批量添加] 圖片/GIF 列表:", allEmojiData);
 				if (allEmojiData.length === 0) throw new Error("未找到可解析的图片");
 				let successCount = 0;
-				console.log("[批量添加] 開始添加圖片...");
+				console.log("[批量添加] 開始添加圖片/GIF...");
 
 				// 設置批量添加模式,暫時禁用事件觸發
 				userscriptState.batchAddMode = true;
@@ -23142,13 +23169,21 @@
 	}
 	function processCookedContent(cookedElement) {
 		if (cookedElement.querySelector(".emoji-batch-parse-button")) return;
-		if (!cookedElement.querySelector(".lightbox-wrapper")) return;
+		// 檢查是否有圖片或 GIF
+		const hasImages = cookedElement.querySelector(".lightbox-wrapper");
+		const hasGifs = cookedElement.querySelector(".pausable-animated-image");
+		if (!hasImages && !hasGifs) return;
 		const batchButton = createBatchParseButton(cookedElement);
 		cookedElement.insertBefore(batchButton, cookedElement.firstChild);
 	}
 	function processCookedContents() {
 		document.querySelectorAll(".cooked").forEach((element) => {
-			if (element.classList.contains("cooked") && element.querySelector(".lightbox-wrapper")) processCookedContent(element);
+			// 檢查是否有圖片或 GIF
+			const hasImages = element.querySelector(".lightbox-wrapper");
+			const hasGifs = element.querySelector(".pausable-animated-image");
+			if (element.classList.contains("cooked") && (hasImages || hasGifs)) {
+				processCookedContent(element);
+			}
 		});
 	}
 	function initBatchParseButtons() {
@@ -25766,7 +25801,7 @@
 							setTimeout(() => {
 								if (preview.style.opacity === "0") preview.style.display = "none";
 							}, 300);
-						}, 5e3);
+						}, 1e3);
 						move(e);
 					}
 					function move(e) {
@@ -26006,7 +26041,7 @@
 							setTimeout(() => {
 								if (preview.style.opacity === "0") preview.style.display = "none";
 							}, 300);
-						}, 5e3);
+						}, 1e3);
 						move(e);
 					}
 					function move(e) {
