@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed -n '22696,22740p' a.js)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
