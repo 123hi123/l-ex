@@ -27416,11 +27416,153 @@
 		else attemptToolbarInjection();
 		setupNetworkListeners();
 		registerTampermonkeyMenu();
+
+		// ---- New Topic Button Injector ----
+		// After clicking the "新話題" button, inject a custom button into
+		// the Discourse composer toolbar.
+		(function () {
+			try {
+				const NEW_TOPIC_SELECTORS = [
+					'#create-topic',
+					'[data-key="createTopic"]',
+					'button.d-button.create',
+					'a.d-button.create',
+					'button.btn.create',
+					'a.btn.create'
+				];
+				const NEW_TOPIC_TEXTS = ['新話題', '新话题', 'New Topic', '發新話題', '发新话题'];
+				const COMPOSER_SELECTORS = [
+					'.composer', '.composer-popup',
+					'.d-editor', 'div[role="dialog"] .d-editor',
+					'.reply-area', '.topic-creation'
+				];
+
+				function addStylesOnce() {
+					if (document.getElementById('my-ext-btn-style')) return;
+					const style = document.createElement('style');
+					style.id = 'my-ext-btn-style';
+					style.textContent = `
+						/* inline icon-style button to blend into Discourse toolbar */
+						.d-editor-button.my-ext-icon-btn { 
+							display:inline-flex; align-items:center; justify-content:center;
+							height: 28px; width: 28px; padding: 0; margin: 0 4px;
+							background: transparent; border: none; border-radius: 4px;
+						}
+						.d-editor-button.my-ext-icon-btn:hover { background: rgba(125,125,125,.12); }
+					`;
+					document.head.appendChild(style);
+				}
+
+				function normText(s){ return (s||'').replace(/\s+/g,'').toLowerCase(); }
+				function hasKeywordText(el, texts){
+					const t = normText(el.innerText || el.textContent);
+					return texts.some(k => t.includes(normText(k)));
+				}
+
+				function isNewTopicButton(el){
+					if (!el) return false;
+					if (el.matches && el.matches(NEW_TOPIC_SELECTORS.join(','))) return true;
+					const btn = el.closest && el.closest(NEW_TOPIC_SELECTORS.join(','));
+					if (btn) return true;
+					return hasKeywordText(el, NEW_TOPIC_TEXTS);
+				}
+
+				function isVisible(el){
+					if (!el) return false;
+					const cs = getComputedStyle(el);
+					if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+					const r = el.getBoundingClientRect();
+					return r.width > 0 && r.height > 0;
+				}
+
+				function findComposerContainer(){
+					for (const sel of COMPOSER_SELECTORS){
+						const el = document.querySelector(sel);
+						if (el && isVisible(el)) return el;
+					}
+					return null;
+				}
+
+				function insertExtButtonInto(composer){
+					if (!composer) return;
+					const toolbar = composer.querySelector('.d-editor-button-bar') || composer.querySelector('.editor-toolbar');
+					if (!toolbar) return; // 僅在工具列存在時插入，避免出現多餘的大按鈕
+					if (toolbar.querySelector('#my-ext-btn')) return;
+
+					const btn = document.createElement('button');
+					btn.id = 'my-ext-btn';
+					btn.type = 'button';
+					btn.className = 'd-editor-button my-ext-icon-btn';
+					btn.setAttribute('title', '擴充工具');
+					btn.innerHTML = '<svg class="fa d-icon d-icon-wrench svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#wrench"></use></svg>';
+					btn.addEventListener('click', (e) => {
+						e.stopPropagation();
+						try {
+							console.log('[a.js] 擴充工具按下，執行你的擴充邏輯...');
+							// TODO: 在此加入你的擴充功能，例如：插入模板/開啟面板/呼叫 API。
+						} catch (err) {
+							console.warn('[a.js] 擴充工具執行失敗', err);
+						}
+					});
+					toolbar.appendChild(btn);
+					console.log('[a.js] 已在編輯器插入擴充按鈕');
+				}
+
+				function waitAndInject(timeoutMs = 12000){
+					const start = performance.now();
+					(function tick(){
+						const c = findComposerContainer();
+						if (c) return insertExtButtonInto(c);
+						if (performance.now() - start < timeoutMs) return setTimeout(tick, 200);
+						console.warn('[a.js] 逾時仍未偵測到編輯器，改由 MutationObserver 持續監聽');
+					})();
+				}
+
+				function bind(){
+					addStylesOnce();
+					document.addEventListener('click', (e) => {
+						const t = e.target && e.target.closest('a,button');
+						if (!t) return;
+						if (isNewTopicButton(t)){
+							console.log('[a.js] 偵測到新話題按鈕被點擊');
+							waitAndInject(12000);
+						}
+					}, true);
+
+					const mo = new MutationObserver(() => {
+						const c = findComposerContainer();
+						if (c) insertExtButtonInto(c);
+					});
+					mo.observe(document.documentElement, { childList: true, subtree: true });
+
+					const c0 = findComposerContainer();
+					if (c0) insertExtButtonInto(c0);
+				}
+
+				if (document.readyState === 'loading'){
+					document.addEventListener('DOMContentLoaded', bind);
+				} else {
+					bind();
+				}
+			} catch (err) {
+				console.warn('[a.js] 新話題按鈕擴充初始化失敗', err);
+			}
+		})();
 	}
 	if (isDiscoursePage()) {
 		console.log("[Emoji Extension Userscript] Discourse detected, initializing emoji feature");
 		initializeEmojiFeature();
 	} else console.log("[Emoji Extension Userscript] Not a Discourse site, skipping injection");
+// 強制隱藏不必要的自訂按鈕（避免出現多餘 UI）
+(function(){
+  try{
+    const style = document.createElement('style');
+    style.id = 'hide-my-ext-btn-style';
+    style.textContent = '#my-ext-btn, .my-ext-icon-btn { display: none !important; }';
+    (document.head || document.documentElement).appendChild(style);
+  }catch(e){ /* no-op */ }
+})();
+
 })();
 
 })();
