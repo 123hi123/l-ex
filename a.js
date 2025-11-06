@@ -27525,7 +27525,11 @@
 						if (!t) return;
 						if (isNewTopicButton(t)){
 							console.log('[a.js] 偵測到新話題按鈕被點擊');
-							waitAndInject(12000);
+							// 延遲 10ms 後呼叫「舊版穩定的注入方法」attemptInjection
+							// 這個方法會尋找所有可用工具列並插入 .emoji-extension-button
+							setTimeout(() => {
+								try { attemptInjection(); } catch(e) { /* no-op */ }
+							}, 10);
 						}
 					}, true);
 
